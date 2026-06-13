@@ -1,0 +1,540 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>新能源汽车官网 — 环形轮播展示</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/bootstrap.css"/>
+    <link rel="stylesheet" href="../css/bootstrap-icons.css"/>
+    <style>
+        :root {
+            --bg: #080808;
+            --accent: #c9a96e;
+            --text: #f5f3ed;
+            --text-muted: rgba(245,243,237,0.45);
+            --border-subtle: rgba(245,243,237,0.06);
+            --transition-fast: 0.2s ease;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+        body {
+            width: 100vw; height: 100vh; overflow: hidden;
+            background: var(--bg);
+            font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            color: var(--text);
+            user-select: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        #top-nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 48px;
+            background: linear-gradient(180deg, var(--bg) 60%, transparent);
+        }
+        #top-nav .brand-name { font-size: 20px; font-weight: 700; letter-spacing: 4px; color: var(--text); }
+        #top-nav .brand-name strong { color: var(--accent); font-weight: 800; }
+        #nav-links { display: flex; gap: 40px; list-style: none; }
+        #nav-links li { position: relative; }
+        #nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; transition: color var(--transition-fast); cursor: pointer; }
+        #nav-links a:hover { color: var(--accent); }
+        .submenu { display: none; position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: rgba(12,12,12,0.96); border: 1px solid var(--border-subtle); padding: 6px 0; min-width: 130px; }
+        #nav-links li:hover .submenu { display: block; }
+        .submenu a { display: block; padding: 7px 18px; font-size: 12px; letter-spacing: 0.5px; text-transform: none; transition: background var(--transition-fast), color var(--transition-fast); cursor: pointer; }
+        .submenu a:hover { background: rgba(201,169,110,0.08); color: var(--accent); }
+        #left-panel { position: fixed; left: 80px; top: 50%; transform: translateY(-50%); z-index: 50; display: flex; flex-direction: column; align-items: flex-start; max-width: 280px; pointer-events: none; overflow: hidden; }
+        #panel-slider { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; transform: translateY(0); transform: translateY(0); transition: transform 0.45s cubic-bezier(0.22,0.61,0.36,1); }
+        #panel-slider.showcase { transform: translateY(var(--slide-dist)); }
+        #panel-slider.showcase #brand-logo-img { opacity: 0.9; }
+        #panel-slider.showcase #brand-name-display { opacity: 1; }
+        #panel-slider.showcase #brand-desc { opacity: 1; }
+        #brand-logo-img { height: 72px; margin-top: 8px; opacity: 0; pointer-events: none; }
+        #brand-logo-img.pop { animation: panelPopLogo 0.5s ease forwards; }
+        #brand-name-display { font-size: 52px; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--text); opacity: 0; transition: opacity 0.35s ease 0.22s; opacity: 1; transform: translateY(0) scale(1); }
+        #brand-name-display.pop { animation: panelPop 0.5s ease 0.08s forwards; }
+        #brand-desc { font-size: 13px; line-height: 1.9; color: var(--text-muted); max-width: 240px; opacity: 1; transform: translateY(0) scale(1); }
+        #brand-desc.pop { animation: panelPop 0.5s ease 0.16s forwards; }
+        #site-intro { }
+        #site-intro.slide-out { opacity: 0; pointer-events: none; }
+        #site-intro.slide-in { opacity: 1; }
+        #site-logo { font-size: 28px; font-weight: 700; letter-spacing: 4px; color: var(--text); margin-bottom: 14px; }
+        #site-logo strong { color: var(--accent); font-weight: 800; }
+        #site-desc { font-size: 14px; line-height: 2; color: var(--text-muted); max-width: 260px; margin-bottom: 8px; }
+        @keyframes panelPop { from { opacity: 0; transform: translateY(16px) scale(0.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes panelPopLogo { from { opacity: 0; transform: translateY(16px) scale(0.92); } to { opacity: 0.9; transform: translateY(0) scale(1); } }
+        @keyframes slideOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-24px); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-24px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }        #ring-area { position: fixed; pointer-events: none; z-index: 30; }
+        #ring-visual { position: absolute; border-radius: 50%; border: 1px solid var(--border-subtle); pointer-events: none; }
+        .ring-car { position: absolute; width: auto; height: auto; max-width: 120px; max-height: 72px; transform: translate(-50%, -50%); pointer-events: none; opacity: 0.45; filter: brightness(0.55); transition: left 0.1s cubic-bezier(0.22,0.61,0.36,1), top 0.1s cubic-bezier(0.22,0.61,0.36,1); }
+        .ring-car img { width: 100%; height: 100%; object-fit: contain; }
+        .ring-car.focused { opacity: 1; filter: brightness(1); z-index: 40; }
+        .ring-car.staged {
+            z-index: 60 !important;
+            opacity: 1 !important;
+            filter: brightness(1) drop-shadow(0 24px 48px rgba(0,0,0,0.7)) !important;
+        }
+        #indicator { position: fixed; right: 72px; top: 50%; transform: translateY(-50%); z-index: 70; display: flex; flex-direction: column; gap: 14px; }
+        .indicator-dot { width: 1px; height: 18px; background: rgba(245,243,237,0.15); transition: background 0.5s ease; cursor: pointer; }
+        .indicator-dot.active { background: var(--accent); }
+        #scroll-hint { position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%); z-index: 50; display: flex; flex-direction: column; align-items: center; gap: 10px; opacity: 0.35; transition: opacity 0.8s ease; }
+        #scroll-hint i { font-size: 18px; color: var(--text-muted); }
+        #scroll-hint span { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--text-muted); }
+        @media (max-width: 768px) {
+            #top-nav { padding: 14px 20px; }
+            #top-nav .brand-name { font-size: 16px; }
+            #nav-links { gap: 18px; }
+            #nav-links a { font-size: 11px; }
+            #left-panel { left: 20px; max-width: 160px; gap: 18px; }
+            #brand-name-display { font-size: 28px; }
+            #brand-desc { font-size: 11px; }
+            #indicator { right: 16px; }
+            .ring-car { max-width: 70px; max-height: 42px; }
+        }
+    
+        /* ===== 弹窗 ===== */
+        .modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.35s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-box { background: rgba(16,16,16,0.95); border: 1px solid var(--border-subtle); padding: 48px 40px; width: 400px; max-width: 90vw; transform: translateY(20px); transition: transform 0.4s cubic-bezier(0.22,0.61,0.36,1); position: relative; }
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+        .modal-box h2 { font-size: 24px; font-weight: 700; letter-spacing: 1px; color: var(--text); margin-bottom: 32px; text-align: center; }
+        .modal-box h2 span { color: var(--accent); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+        .form-group input { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--text); font-size: 14px; outline: none; transition: border-color 0.25s; }
+        .form-group input:focus { border-color: var(--accent); }
+        .btn-submit { width: 100%; padding: 13px; margin-top: 8px; background: var(--accent); color: var(--bg); border: none; font-size: 14px; font-weight: 600; letter-spacing: 2px; cursor: pointer; transition: opacity 0.2s; }
+        .btn-submit:hover { opacity: 0.85; }
+        .modal-switch { text-align: center; margin-top: 20px; font-size: 12px; color: var(--text-muted); }
+        .modal-switch a { color: var(--accent); cursor: pointer; text-decoration: none; }
+        .modal-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; transition: color 0.2s; }
+        .modal-close:hover { color: var(--text); }    </style>
+</head>
+<body>
+    <nav id="top-nav">
+        <div class="brand-name">NEO<strong>DRIVE</strong></div>
+        <ul id="nav-links">
+            <li><a href="#home">首页</a></li>
+            <li>
+                <a href="#cars">车型展示</a>
+                <div class="submenu">
+                    <a href="#" data-brand="0">兰博基尼</a><a href="#" data-brand="1">奥迪</a><a href="#" data-brand="2">宝马</a>
+                    <a href="#" data-brand="3">宾利</a><a href="#" data-brand="4">小米</a><a href="#" data-brand="5">斯巴鲁</a>
+                    <a href="#" data-brand="6">法拉利</a><a href="#" data-brand="7">路虎</a><a href="#" data-brand="8">迈凯伦</a>
+                </div>
+            </li>
+            <li><a href="#" onclick="event.preventDefault();openModal(&quot;register&quot;)">注册</a></li>
+            <li><a href="#" onclick="event.preventDefault();openModal(&quot;login&quot;)">登录</a></li>
+        </ul>
+    </nav>
+    <div id="left-panel">
+        <div id="panel-slider">
+        <div id="site-intro">
+            <div id="site-logo">NEO<strong>DRIVE</strong></div>
+            <div id="site-desc">汇聚全球顶尖新能源汽车品牌，以沉浸式环形交互体验，为每一位汽车爱好者呈现最纯粹的机械美学与未来科技。滚动鼠标探索车型，点击空白区域退出。</div>
+        </div>
+        <img id="brand-logo-img" src="images/兰博基尼/lamborghini.svg" alt="品牌Logo">
+        <div id="brand-name-display"></div>
+        <div id="brand-desc"></div>
+        </div>
+    </div>
+    
+    <canvas id="bg-canvas"></canvas><div id="ring-area">
+        <div id="ring-visual"></div>
+        <div id="ring-cars"></div>
+    </div>
+    <div id="indicator"></div>
+    <div id="scroll-hint">
+        <i class="bi bi-mouse"></i>
+        <span>滚动旋转 · 松手展示</span>
+    </div>
+    <script src="../js/bootstrap.bundle.js"></script><script>
+    function openModal(id) { if (window._isShowcase) window._exitShowcase(); document.getElementById("login-modal").classList.remove("active"); document.getElementById("register-modal").classList.remove("active"); document.getElementById(id+"-modal").classList.add("active"); }
+    function closeModals() { document.getElementById("login-modal").classList.remove("active"); document.getElementById("register-modal").classList.remove("active"); }
+    function switchModal(t) { closeModals(); document.getElementById(t+"-modal").classList.add("active"); }
+    function handleRegister() { var u=document.getElementById("reg-username").value.trim(), e=document.getElementById("reg-email").value.trim(), p=document.getElementById("reg-pwd").value, p2=document.getElementById("reg-pwd2").value; if(!u||!e||!p){alert("请填写完整信息");return;} if(p.length<6){alert("密码至少6位");return;} if(p!==p2){alert("两次密码不一致");return;} alert("注册成功，欢迎 "+u); closeModals(); }
+    function handleLogin() { var e=document.getElementById("login-email").value.trim(), p=document.getElementById("login-pwd").value; if(!e||!p){alert("请填写完整信息");return;} alert("登录成功，欢迎回来"); closeModals(); }
+</script>
+
+    <script>
+    (function() {
+        var brands = [
+            { name: "兰博基尼", logo: "images/兰博基尼/lamborghini.svg", car: "images/兰博基尼/lbjn.png" },
+            { name: "奥迪", logo: "images/奥迪/audi-7.svg", car: "images/奥迪/ad.png" },
+            { name: "宝马", logo: "images/宝马/bmw-logo-gray-.svg", car: "images/宝马/bm.png" },
+            { name: "宾利", logo: "images/宾利/bentley-motors-1.svg", car: "images/宾利/bl.png" },
+            { name: "小米", logo: "images/小米/xiaomi-3.svg", car: "images/小米/xm-remove-bg-io.png" },
+            { name: "斯巴鲁", logo: "images/斯巴鲁/subaru-12.svg", car: "images/斯巴鲁/sbl.png" },
+            { name: "法拉利", logo: "images/法拉利/ferrari-ges.svg", car: "images/法拉利/fll.png" },
+            { name: "路虎", logo: "images/路虎/land-roverin-logo.svg", car: "images/路虎/lh.png" },
+            { name: "迈凯伦", logo: "images/迈凯伦/mclaren-10.svg", car: "images/迈凯伦/mkl.png" }
+        ];
+        var details = [
+            "兰博基尼Revuelto——品牌首款V12插电式混合动力超级跑车，搭载6.5升自然吸气V12发动机与三台轴向磁通电机，综合输出高达1015匹马力。0-100km/h加速仅需2.5秒，0-200km/h仅7秒，极速突破350km/h。碳纤维单体式车身仅重1772公斤，配备主动空气动力学尾翼与矢量扭矩分配系统。纯电续航约10公里，以电气化技术延续兰博基尼对极致性能的永恒追求。",
+            "奥迪e-tron GT——纯电四门Gran Turismo轿跑，与保时捷Taycan共享J1高性能电动平台。前后双电机四驱布局迸发646匹马力，峰值扭矩830牛米，0-100km/h仅3.3秒。93kWh电池组支持WLTP续航488公里，800V高压快充技术5%至80%仅需22.5分钟。风阻系数低至0.24，配备三腔空气悬架与全轮转向系统，将豪华、性能与可持续出行完美融合。",
+            "宝马i7 M70 xDrive——宝马旗舰纯电豪华轿车，前后双电机四驱系统输出660匹马力，0-100km/h仅3.7秒。搭载101.7kWh电池组，CLTC续航里程超过600公里。后排配备31英寸悬浮式巨幕剧院屏，配合Bowers & Wilkins钻石环绕音响系统与36扬声器。集成自动驾驶辅助系统Pro与智能个人助理，以数字科技重新定义移动豪华空间的新高度。",
+            "宾利飞驰插电混动版——搭载2.9升V6双涡轮增压发动机与电动机协同工作，系统综合续航里程超过800公里，纯电模式续航约40公里。全手工打造奢华座舱，精选北欧顶级牛皮与百年胡桃木饰板，提供超过390种内饰配色方案。4.1秒从容破百的同时，兼顾超豪华品牌的百年传承与可持续出行使命，开创绿色奢华新纪元。",
+            "小米SU7 Ultra——搭载自研HyperEngine超级三电机系统，前后双电机加独立后轮电机，综合最大功率1548匹马力，0-100km/h加速仅需1.98秒，极速350km/h。配备Xiaomi Pilot全场景智能驾驶，融合128线激光雷达、11个高清摄像头与3个毫米波雷达。澎湃OS车机系统打通人车家全生态，以极致性能与全域智驾树立电动轿跑新标杆。",
+            "斯巴鲁SOLTERRA——斯巴鲁首款全球纯电动SUV，基于与丰田联合开发的e-Subaru Global Platform纯电专属平台打造。搭载前后双电机对称式全时四驱系统，综合功率218马力，续航里程约460公里。配备X-MODE越野模式与Grip Control爬行控制系统，离地间隙210毫米。完美传承品牌拉力赛事基因，在电动化时代继续诠释纯粹驾控乐趣。",
+            "法拉利SF90 Stradale——跃马品牌首款量产插电式混合动力超级跑车，搭载4.0升V8双涡轮增压发动机与三台电机，综合输出高达1000匹马力。百公里加速仅需2.5秒，0-200km/h仅6.7秒，极速340km/h。配备全时四驱系统与电子侧滑角控制技术，7.9kWh电池组支持25公里纯电行驶。以前沿赛道科技融合电气化动力，开启法拉利全新时代。",
+            "路虎揽胜运动版PHEV——搭载3.0T直列六缸Ingenium涡轮增压发动机与105kW电动机，系统综合功率510马力，纯电续航里程约100公里。配备Terrain Response 2第二代全地形反馈适应系统、智能电子空气悬架与主动式后桥差速锁。涉水深度达900毫米，最大爬坡角度45度。兼具奢华公路质感与硬核越野基因，从容驾驭任何路况。",
+            "迈凯伦Artura——品牌首款量产高性能混合动力超级跑车，搭载全新3.0升V6双涡轮增压发动机与轴向磁通电机，综合输出680匹马力与720牛米扭矩。0-100km/h加速仅需3秒，极速330km/h。碳纤维单体壳结构使整车干重仅1395公斤，纯电续航约30公里。以极致轻量化工程技术融合赛道基因，树立新一代混动超跑驾控典范。"
+        ];var N = brands.length, angleStep = 360 / N, FOCUS_ANGLE = -90;
+        var ROTATE_SPEED = 0.35; // 滚动灵敏度：每像素滚轮旋转度数
+        var DEBOUNCE_MS = 280;   // 停止滚动后等待多久弹出
+        var ringArea = document.getElementById("ring-area");
+        var ringVisual = document.getElementById("ring-visual");
+        var ringCars = document.getElementById("ring-cars");
+        var brandLogoImg = document.getElementById("brand-logo-img");
+        var brandNameDisplay = document.getElementById("brand-name-display");
+        var brandDesc = document.getElementById("brand-desc");
+        var indicator = document.getElementById("indicator");
+        var scrollHint = document.getElementById("scroll-hint");
+        var siteIntro = document.getElementById("site-intro");
+        var currentAngle = 0, currentIndex = 0, stagedIndex = -1, isShowcase = false; window._isShowcase = false;
+        var ringCX, ringCY, ringR;
+        var carEls = [], resizeTimeout, wheelTimer = null;
+        var prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var aniDuration = prefersReduced ? "0s" : "0.4s";
+        var aniEasing = "cubic-bezier(0.22, 0.61, 0.36, 1)";
+
+        function calcRing() {
+            var w = window.innerWidth, h = window.innerHeight;
+            ringCX = w * 0.78; ringCY = h * 0.52;
+            ringR = Math.min(w, h) * 0.38;
+            ringArea.style.left = (ringCX - ringR) + "px";
+            ringArea.style.top = (ringCY - ringR) + "px";
+            ringArea.style.width = ringArea.style.height = (ringR * 2) + "px";
+            ringVisual.style.left = ringVisual.style.top = "0px";
+            ringVisual.style.width = ringVisual.style.height = (ringR * 2) + "px";
+        }
+
+        function createCarElements() {
+            ringCars.innerHTML = ""; carEls = [];
+            brands.forEach(function(b) {
+                var div = document.createElement("div");
+                div.className = "ring-car";
+                div.innerHTML = '<img src="' + b.car + '" alt="' + b.name + '">';
+                ringCars.appendChild(div);
+                carEls.push(div);
+            });
+        }
+
+        function createIndicators() {
+            indicator.innerHTML = "";
+            for (var i = 0; i < N; i++) {
+                (function(idx) {
+                    var dot = document.createElement("div");
+                    dot.className = "indicator-dot" + (idx === 0 ? " active" : "");
+                    dot.style.cursor = "pointer";
+                    dot.addEventListener("click", function() { snapToBrand(idx); });
+                    indicator.appendChild(dot);
+                })(i);
+            }
+        }
+
+        function updateRingPositions() {
+            carEls.forEach(function(el, i) {
+                if (i === stagedIndex) return;
+                var rad = (currentAngle + i * angleStep) * Math.PI / 180;
+                el.style.left = (ringR + ringR * Math.cos(rad)) + "px";
+                el.style.top = (ringR + ringR * Math.sin(rad)) + "px";
+            });
+        }
+
+        function getFocusedIndex() {
+            var best = 0, bestD = Infinity;
+            for (var i = 0; i < N; i++) {
+                var d = ((currentAngle + i * angleStep) - FOCUS_ANGLE + 540) % 360 - 180;
+                if (Math.abs(d) < Math.abs(bestD)) { bestD = d; best = i; }
+            }
+            return best;
+        }
+
+        function stageCar(index) {
+            var el = carEls[index];
+            var rect = el.getBoundingClientRect();
+            var targetW = Math.min(900, window.innerWidth * 0.6);
+            var targetH = Math.min(580, window.innerHeight * 0.72);
+            var targetX = window.innerWidth * 0.6 - targetW / 2;
+            var targetY = window.innerHeight * 0.5 - targetH / 2;
+            el.style.transition = "none";
+            el.style.position = "fixed";
+            el.style.left = rect.left + "px";
+            el.style.top = rect.top + "px";
+            el.style.width = rect.width + "px";
+            el.style.height = rect.height + "px";
+            el.style.transform = "none";
+            el.style.zIndex = "60";
+            el.style.maxWidth = "none"; el.style.maxHeight = "none";
+            el.style.opacity = "1";
+            el.style.filter = "brightness(1)";
+            el.classList.add("staged");
+            el.classList.remove("focused");
+            stagedIndex = index;
+            el.offsetHeight;
+            el.style.transition = "left " + aniDuration + " " + aniEasing + ", top " + aniDuration + " " + aniEasing + ", width " + aniDuration + " " + aniEasing + ", height " + aniDuration + " " + aniEasing + ", filter 0.4s ease";
+            el.style.left = targetX + "px";
+            el.style.top = targetY + "px";
+            el.style.width = targetW + "px";
+            el.style.height = targetH + "px";
+            el.style.filter = "brightness(1) drop-shadow(0 24px 48px rgba(0,0,0,0.7))";
+        }
+
+        function unstageCar(index) {
+            var el = carEls[index];
+            var rad = (currentAngle + index * angleStep) * Math.PI / 180;
+            var ringLeft = (ringR + ringR * Math.cos(rad)) + "px";
+            var ringTop = (ringR + ringR * Math.sin(rad)) + "px";
+            el.style.transition = "left " + aniDuration + " " + aniEasing + ", top " + aniDuration + " " + aniEasing + ", width " + aniDuration + " " + aniEasing + ", height " + aniDuration + " " + aniEasing + ", opacity 0.4s, filter 0.4s";
+            el.style.position = "absolute";
+            el.style.left = ringLeft;
+            el.style.top = ringTop;
+            el.style.width = "auto";
+            el.style.height = "auto";
+            el.style.maxWidth = "120px";
+            el.style.maxHeight = "72px";
+            el.style.transform = "translate(-50%, -50%)";
+            el.style.zIndex = "";
+            el.style.opacity = "0.45";
+            el.style.filter = "brightness(0.55)";
+            el.classList.remove("staged", "focused");
+            stagedIndex = -1;
+        }
+
+        function snapToBrand(idx) {
+            clearTimeout(wheelTimer); wheelTimer = null;
+            if (stagedIndex >= 0) unstageCar(stagedIndex);
+            var targetAngle = (FOCUS_ANGLE - idx * angleStep + 360) % 360;
+            currentAngle = targetAngle;
+            currentIndex = idx;
+            updateRingPositions();
+            enterShowcase(idx);
+            scrollHint.style.opacity = "0";
+        }
+
+        function settleOnClosest() {
+            var idx = getFocusedIndex();
+            if (idx === currentIndex && stagedIndex === idx) return;
+            if (stagedIndex >= 0) unstageCar(stagedIndex);
+            var targetAngle = (FOCUS_ANGLE - idx * angleStep + 360) % 360;
+            currentAngle = targetAngle;
+            currentIndex = idx;
+            updateRingPositions();
+            enterShowcase(idx);
+            scrollHint.style.opacity = "0";
+        }
+
+        function enterShowcase(idx) {
+            isShowcase = true; window._isShowcase = true;
+            document.getElementById("panel-slider").classList.add("showcase");
+            updateLeftPanel(idx);
+            updateIndicatorDots(idx);
+            requestAnimationFrame(function() { requestAnimationFrame(function() { stageCar(idx); }); });
+        }
+        function exitShowcase() {
+            if (!isShowcase) return;
+            isShowcase = false; window._isShowcase = false;
+            if (stagedIndex >= 0) unstageCar(stagedIndex);
+            document.getElementById("panel-slider").classList.remove("showcase");
+            var dots = indicator.querySelectorAll(".indicator-dot");
+            dots.forEach(function(d) { d.classList.remove("active"); });
+        }
+        function updateLeftPanel(index) {
+            var b = brands[index];
+            brandLogoImg.classList.remove("pop");
+            brandNameDisplay.classList.remove("pop");
+            brandDesc.classList.remove("pop");
+            void brandLogoImg.offsetWidth;
+            brandLogoImg.src = b.logo;
+                brandLogoImg.style.height = index === 8 ? '52px' : (index === 3 || index === 5 ? '168px' : '144px');
+            brandNameDisplay.textContent = b.name;
+            brandDesc.textContent = details[index];
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    brandLogoImg.classList.add("pop");
+                    brandNameDisplay.classList.add("pop");
+                    brandDesc.classList.add("pop");
+                });
+            });
+        }
+
+        function updateIndicatorDots(index) {
+            var dots = indicator.querySelectorAll(".indicator-dot");
+            dots.forEach(function(d, i) { d.classList.toggle("active", i === index); });
+            if (index < 0) dots.forEach(function(d) { d.classList.remove("active"); });
+        }
+
+        function onWheel(e) {
+            e.preventDefault();
+            // 有车在舞台上就先塞回圆环
+            if (stagedIndex >= 0) {
+                unstageCar(stagedIndex);
+            }
+            // 实时旋转
+            currentAngle = (currentAngle + e.deltaY * ROTATE_SPEED + 360) % 360;
+            updateRingPositions();
+            // 重置防抖：松手后才弹出
+            clearTimeout(wheelTimer);
+            wheelTimer = setTimeout(function() { settleOnClosest(); }, DEBOUNCE_MS);
+        }
+
+        
+        function openModal(id) { if (isShowcase) exitShowcase(); document.getElementById('login-modal').classList.remove('active'); document.getElementById('register-modal').classList.remove('active'); document.getElementById(id+'-modal').classList.add('active'); }
+        function closeModals() { document.getElementById('login-modal').classList.remove('active'); document.getElementById('register-modal').classList.remove('active'); }
+        function switchModal(t) { closeModals(); document.getElementById(t+'-modal').classList.add('active'); }
+        function handleRegister() { var u=document.getElementById('reg-username').value.trim(), e=document.getElementById('reg-email').value.trim(), p=document.getElementById('reg-pwd').value, p2=document.getElementById('reg-pwd2').value; if(!u||!e||!p){alert('请填写完整信息');return;} if(p.length<6){alert('密码至少6位');return;} if(p!==p2){alert('两次密码不一致');return;} alert('注册成功，欢迎 '+u); closeModals(); }
+        function handleLogin() { var e=document.getElementById('login-email').value.trim(), p=document.getElementById('login-pwd').value; if(!e||!p){alert('请填写完整信息');return;} alert('登录成功，欢迎回来'); closeModals(); }
+        document.querySelectorAll('.modal-overlay').forEach(function(ov){ ov.addEventListener('click',function(e){if(e.target===ov)closeModals();}); });
+        document.querySelectorAll(".submenu a[data-brand]").forEach(function(link) {
+            link.addEventListener("click", function(e) {
+                e.preventDefault();
+                snapToBrand(parseInt(this.dataset.brand));
+            });
+        });
+
+        function onKeyDown(e) {
+            if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                e.preventDefault();
+                if (stagedIndex >= 0) unstageCar(stagedIndex);
+                currentAngle = (currentAngle + angleStep * 0.6) % 360;
+                updateRingPositions();
+                clearTimeout(wheelTimer);
+                wheelTimer = setTimeout(function() { settleOnClosest(); }, DEBOUNCE_MS);
+            } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                e.preventDefault();
+                if (stagedIndex >= 0) unstageCar(stagedIndex);
+                currentAngle = (currentAngle - angleStep * 0.6 + 360) % 360;
+                updateRingPositions();
+                clearTimeout(wheelTimer);
+                wheelTimer = setTimeout(function() { settleOnClosest(); }, DEBOUNCE_MS);
+            }
+        }
+
+        function onResize() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() { calcRing(); updateRingPositions(); }, 200);
+        }
+
+        
+        // ===== 背景粒子动画 =====
+        var bgCanvas = document.getElementById("bg-canvas");
+        var bgCtx = bgCanvas.getContext("2d");
+        var particles = [];
+        var PARTICLE_COUNT = 150;
+        var REPEL_RADIUS = 76, REPEL_FORCE = 0.8;
+        var mouseX = -999, mouseY = -999;
+        function resizeBg() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
+        resizeBg();
+        for (var pi = 0; pi < PARTICLE_COUNT; pi++) {
+            particles.push({
+                x: Math.random() * bgCanvas.width,
+                y: Math.random() * bgCanvas.height,
+                r: Math.random() * 1.2 + 0.3,
+                vx: (Math.random() - 0.5) * 0.15,
+                vy: (Math.random() - 0.5) * 0.15,
+                o: Math.random() * 0.4 + 0.1
+            });
+        }
+        window.addEventListener("mousemove", function(e) { mouseX = e.clientX; mouseY = e.clientY; });
+        function drawBg() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            particles.forEach(function(p, i) {
+                var dx = p.x - mouseX, dy = p.y - mouseY;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < REPEL_RADIUS && dist > 0) {
+                    var force = (1 - dist / REPEL_RADIUS) * REPEL_FORCE;
+                    p.vx += (dx / dist) * force * 0.05;
+                    p.vy += (dy / dist) * force * 0.05;
+                }
+                p.x += p.vx; p.y += p.vy;
+                p.vx += (Math.random() - 0.5) * 0.0005; p.vy += (Math.random() - 0.5) * 0.0005;
+                if (p.x < 0) p.x = bgCanvas.width;
+                if (p.x > bgCanvas.width) p.x = 0;
+                if (p.y < 0) p.y = bgCanvas.height;
+                if (p.y > bgCanvas.height) p.y = 0;
+                bgCtx.beginPath();
+                bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                bgCtx.fillStyle = "rgba(201,169,110," + p.o + ")";
+                bgCtx.fill();
+                particles.forEach(function(p2, j) {
+                    if (j <= i) return;
+                    var dx2 = p.x - p2.x, dy2 = p.y - p2.y;
+                    var d2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                    if (d2 < 150) {
+                        bgCtx.beginPath();
+                        bgCtx.moveTo(p.x, p.y);
+                        bgCtx.lineTo(p2.x, p2.y);
+                        bgCtx.strokeStyle = "rgba(201,169,110," + (0.03 * (1 - d2 / 150)) + ")";
+                        bgCtx.lineWidth = 0.3;
+                        bgCtx.stroke();
+                    }
+                });
+            });
+            requestAnimationFrame(drawBg);
+        }
+        requestAnimationFrame(drawBg);
+        window.addEventListener("resize", function() { resizeBg(); });
+        function init() {
+            siteIntroH = siteIntro.scrollHeight; var dist = -(siteIntroH + 12); document.getElementById("panel-slider").style.setProperty("--slide-dist", dist + "px");
+            
+            calcRing();
+            createCarElements();
+            createIndicators();
+            updateRingPositions();
+            // 预加载所有车图，避免首次滚动卡顿
+            var loaded = 0;
+            brands.forEach(function(b) {
+                var img = new Image();
+                img.onload = img.onerror = function() {
+                    loaded++;
+                    if (loaded === N) {
+                        ringCars.style.opacity = "1";
+                    }
+                };
+                img.src = b.car;
+            });
+            updateIndicatorDots(-1);
+            window.addEventListener("wheel", onWheel, { passive: false });
+            window.addEventListener("keydown", onKeyDown);
+            window.addEventListener("resize", onResize);
+            document.body.addEventListener("click", function(e) {
+                if (e.target.closest("#top-nav") || e.target.closest("#indicator") || e.target.closest(".ring-car")) return;
+                exitShowcase();
+            });
+            setTimeout(function() { scrollHint.style.opacity = "0"; }, 6000);
+        }
+
+        init(); window._exitShowcase = exitShowcase;
+    })();
+    </script>
+
+    <div class="modal-overlay" id="login-modal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModals()">×</button>
+            <h2>账号<span>登录</span></h2>
+            <div class="form-group"><label>邮箱 / 用户名</label><input type="text" id="login-email" placeholder="请输入邮箱或用户名"></div>
+            <div class="form-group"><label>密码</label><input type="password" id="login-pwd" placeholder="请输入密码"></div>
+            <button class="btn-submit" onclick="handleLogin()">登 录</button>
+            <div class="modal-switch">还没有账号？<a onclick="switchModal('register')">立即注册</a></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="register-modal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModals()">×</button>
+            <h2>创建<span>账号</span></h2>
+            <div class="form-group"><label>用户名</label><input type="text" id="reg-username" placeholder="请输入用户名"></div>
+            <div class="form-group"><label>邮箱</label><input type="email" id="reg-email" placeholder="请输入邮箱地址"></div>
+            <div class="form-group"><label>密码</label><input type="password" id="reg-pwd" placeholder="请设置密码（至少6位）"></div>
+            <div class="form-group"><label>确认密码</label><input type="password" id="reg-pwd2" placeholder="请再次输入密码"></div>
+            <button class="btn-submit" onclick="handleRegister()">注 册</button>
+            <div class="modal-switch">已有账号？<a onclick="switchModal('login')">立即登录</a></div>
+        </div>
+    </div></body>
+</html>
